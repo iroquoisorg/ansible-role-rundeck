@@ -1,4 +1,16 @@
 ---
+galaxy_info:
+  role_name: rundeck
+  author: leafnode
+  description: role for rundeck
+  license: BSD
+  min_ansible_version: 2.5.4 # tested on this version, might work on older versions
+  platforms:
+  - name: Ubuntu
+    versions:
+    - 16.04
+  galaxy_tags: []
+
 dependencies:
   - java8
   - apache
