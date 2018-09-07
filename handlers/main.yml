@@ -1,0 +1,10 @@
+---
+- name: restart rundeck
+  service:
+    name: rundeckd
+    state: restarted
+
+- name: restart apache
+  service:
+    name: apache2
+    state: restarted

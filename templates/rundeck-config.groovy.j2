@@ -1,0 +1,26 @@
+loglevel.default="INFO"
+rdeck.base="/var/lib/rundeck"
+rss.enabled=false
+
+grails {
+    mail {
+        host = "{{ rundeck_mail_host }}"
+        port = {{ rundeck_mail_port }}
+        username = "{{ rundeck_mail_user }}"
+        password = "{{ rundeck_mail_password }}"
+        props = ["mail.smtp.auth":"true",
+                      "mail.smtp.socketFactory.port":"{{ rundeck_mail_port }}",
+                      "mail.smtp.socketFactory.class":"javax.net.ssl.SSLSocketFactory",
+                      "mail.smtp.socketFactory.fallback":"false"]
+      }
+}
+
+grails.serverURL="http://{{ rundeck_host }}:{{ rundeck_port }}"
+
+dataSource.dbCreate="update"
+dataSource.url="jdbc:mysql://localhost/{{ rundeck_mysql_db }}?autoReconnect=true"
+dataSource.username="{{ rundeck_mysql_user }}"
+dataSource.password="{{ rundeck_mysql_password }}"
+dataSource.driverClassName="com.mysql.jdbc.Driver"
+rundeck.projectsStorageType="db"
+rundeck.api.tokens.duration.max=0

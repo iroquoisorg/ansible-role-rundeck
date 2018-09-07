@@ -1,0 +1,12 @@
+---
+rundeck_version: 2.7.3
+rundeck_host: localhost
+rundeck_port: 80
+rundeck_ssl_port: 443
+
+rundeck_internal_port: 4440
+rundeck_internal_ssl_port: 4443
+
+rundeck_expire_days: 20
+rundeck_api_key: ""
+rundeck_expire_projects: "[]" # string with python array

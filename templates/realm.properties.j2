@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+
+# admin
+
+{{ rundeck_admin.username }}: MD5:{{ rundeck_admin.password }},user,admin,architect,deploy,build
+
+# users
+
+{% for user in rundeck_users %}
+{{ user.username }}: MD5:{{ user.password }},user,build
+{% endfor %}

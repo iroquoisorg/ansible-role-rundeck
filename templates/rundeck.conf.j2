@@ -1,0 +1,17 @@
+<VirtualHost *:{{ rundeck_port }}>
+    ServerName {{ rundeck_host }}
+    ProxyRequests Off
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+
+    <Location />
+        ProxyPass http://127.0.0.1:{{ rundeck_internal_port }}/
+        ProxyPassReverse http://127.0.0.1:{{ rundeck_internal_port }}/
+    </Location>
+
+
+    ErrorLog  /var/log/apache2/rundeck-error_log
+    CustomLog /var/log/apache2/rundeck-access_log combined
+</VirtualHost>

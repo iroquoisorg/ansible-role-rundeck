@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+from glob import glob
+from pprint import pprint
+import os.path
+import json
+from datetime import datetime
+import requests
+import xml.etree.ElementTree as ET
+import time
+
+API_KEY='{{ rundeck_api_key }}'
+RUNDECKSERVER = 'http://127.0.0.1'
+RUNDECKPORT='4440'
+EXPIRE_DAYS = {{ rundeck_expire_days }}
+TODAY = int(round(time.time() * 1000))
+EXPIRE_MILISECONDS = EXPIRE_DAYS * 24 * 60 * 60 * 1000
+
+dataDir = '/var/lib/rundeck/logs/rundeck/'
+projects = {{ rundeck_expire_projects }}
+
+def getProjects():
+   return projects
+
+def getJobs(project):
+   jobs = glob('%s/%s/job/*' % (dataDir,project,) )
+   return map(lambda x: os.path.split(x)[1], jobs)
+
+def getExecutions(project,job):
+   directory = '%s/%s/job/%s/logs' % (dataDir,project,job)
+   executions = map(lambda x: x[:-11], glob('%s/*.state.json' % (directory,)))
+   return map(lambda x: os.path.split(x)[1], executions)
+
+def getExecutionDate(project,job,execution):
+   filename = '%s/%s/job/%s/logs/%s.state.json' % (dataDir,project,job,execution)
+   fp = open(filename)
+   data = json.load(fp)
+   dateObject = datetime.strptime(data['startTime'], '%Y-%m-%dT%H:%M:%SZ')
+   fp.close()
+   return dateObject
+
+def isOlderThanExpireDays(execution_date, today):
+   timestamp = (execution_date - datetime(1970, 1, 1)).total_seconds()* 1000
+   if ((today - timestamp) > EXPIRE_MILISECONDS):
+      return True
+   return False
+
+def deleteExecution(execution_id):
+   url =  RUNDECKSERVER +':'+RUNDECKPORT+'/api/12/execution/'+execution_id
+   headers = {'Content-Type': 'application/json','X-RunDeck-Auth-Token': API_KEY }
+   r = requests.delete(url, headers=headers, verify=False)
+
+def main():
+   for project in getProjects():
+      jobs = getJobs(project)
+      print "%s" % (project,)
+      for job in jobs:
+         print "\t%s:" % (job,)
+         executions = getExecutions(project,job)
+         for execution in executions:
+            print "\t\t%s" % (execution,)
+            dt = getExecutionDate(project,job,execution)
+            print "\t\t\t%s" % (dt)
+            if isOlderThanExpireDays(dt,TODAY):
+               print "\t\t\tDELETING"
+               deleteExecution(execution)
+
+if __name__ == "__main__":
+   main()
+

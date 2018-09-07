@@ -1,0 +1,43 @@
+---
+description: 'Allow group build to run all jobs'
+for:
+  job:
+  - allow:
+    - runAs
+    - killAs
+    - kill
+    - run
+    - read
+    match:
+      name: '.*'
+  node:
+  - allow:
+    - read
+    - run
+  adhoc:
+  - deny:
+    - read
+    - run
+  resource:
+  - allow: read
+    equals:
+      kind: event
+context:
+  project: '.*'
+by:
+  group: build
+---
+description: 'Allow group build to read all projects and keys'
+for:
+  project:
+  - allow: read
+    match:
+      name:  '.*'
+  storage:
+  - match:
+      path: 'keys/.*'
+    allow: read
+context:
+  application: rundeck
+by:
+  group: build

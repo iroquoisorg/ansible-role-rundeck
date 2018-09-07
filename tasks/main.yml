@@ -1,0 +1,173 @@
+---
+- name: Install Rundeck key
+  apt_key:
+    url: 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray'
+    state: present
+
+- name: Add Rundeck repository
+  become: yes
+  apt_repository:
+    repo: 'deb http://dl.bintray.com/rundeck/rundeck-deb /'
+    state: present
+    update_cache: yes
+  tags:
+    - rundeck
+
+- name: Install Rundeck packages
+  become: yes
+  apt:
+    name: "rundeck={{ rundeck_version }}"
+    state: present
+    force: yes
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time | default(3600) }}"
+  notify: restart rundeck
+  tags:
+    - rundeck
+
+- name: Install Rundeck CLI client
+  apt:
+    name: "rundeck-cli"
+    state: present
+
+- name: Configure Rundeck (1)
+  lineinfile:
+    dest: "/etc/rundeck/framework.properties"
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+  with_items:
+    - { regexp: '^framework.server.name =', line: 'framework.server.name = {{ rundeck_host }}'}
+    - { regexp: '^framework.server.hostname =', line: 'framework.server.hostname = {{ rundeck_host }}'}
+    - { regexp: '^framework.server.port =', line: 'framework.server.port = {{ rundeck_port }}'}
+    - { regexp: '^framework.server.url =', line: 'framework.server.url = http://{{ rundeck_host }}:{{ rundeck_port }}'}
+  notify: restart rundeck
+
+- name: Configure Rundeck (2)
+  template:
+    src: rundeck-config.groovy.j2
+    dest: /etc/rundeck/rundeck-config.groovy
+    owner: rundeck
+    group: rundeck
+    mode: 0600
+  notify: restart rundeck
+
+- name: Install user ACL policy file
+  copy:
+    src: user.aclpolicy
+    dest: /etc/rundeck/user.aclpolicy
+    owner: rundeck
+    group: rundeck
+    mode: 0600
+  notify: restart rundeck
+
+- name: Install API ACL policy file
+  copy:
+    src: apitoken.aclpolicy
+    dest: /etc/rundeck/apitoken.aclpolicy
+    owner: rundeck
+    group: rundeck
+    mode: 0600
+  notify: restart rundeck
+
+- name: Configure rundeck users and passwords
+  template:
+    src: realm.properties.j2
+    dest: /etc/rundeck/realm.properties
+    owner: rundeck
+    group: rundeck
+    mode: 0600
+  notify: restart rundeck
+
+- name: Install profile configuration for Rundeck
+  template:
+    src: profile.j2
+    dest: /etc/rundeck/profile
+    owner: rundeck
+    group: rundeck
+    mode: 0600
+  notify: restart rundeck
+
+- name: Download slack notification plugin
+  get_url:
+    url: https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin/releases/download/v0.6.dev/rundeck-slack-incoming-webhook-plugin-0.6.jar
+    dest: /var/lib/rundeck/libext
+
+- name: Install apache2
+  apt:
+    package: apache2
+    state: present
+
+- name: Check if proxy module is enabled
+  stat: path=/etc/apache2/mods-enabled/proxy.load
+  register: proxy
+
+- name: Enable proxy module if required
+  shell: a2enmod proxy
+  when: proxy.stat.exists == false
+  notify: restart apache
+
+- name: Enable proxy_http module if required
+  shell: a2enmod proxy_http
+  when: proxy.stat.exists == false
+  notify: restart apache
+
+- name: Create apache2 Rundeck configuration
+  template:
+    src: rundeck.conf.j2
+    dest: /etc/apache2/sites-available/rundeck.conf
+  notify: restart apache
+
+- name: Check if rundeck vhost is enabled
+  stat: path=/etc/apache2/sites-enabled/rundeck.conf
+  register: vhost
+
+- name: Enable apache2 rundeck vhosts if required
+  shell: a2ensite rundeck.conf
+  when: vhost.stat.exists == false
+  notify: restart apache
+
+- name: Check if rundeck vhost is enabled
+  stat: path=/etc/apache2/sites-enabled/000-default.conf
+  register: defaultvhost
+
+- name: Disable apache2 default vhost
+  shell: a2dissite 000-default.conf
+  when: defaultvhost.stat.exists == true
+  notify: restart apache
+
+- name: Install old executions cleanup script
+  template:
+    src: deleteoldlogs.py.j2
+    dest: /usr/local/bin/deleteoldlogs.py
+
+- name: Enable cleanup cronjob
+  cron:
+    name: "Cleanup old scripts"
+    user: "root"
+    job: "python /usr/local/bin/deleteoldlogs.py"
+    minute: "15"
+    hour: "6"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    state: "present"
+
+- name: Compress logs
+  cron:
+    job: "( find /var/log/rundeck/ -name \\*.log.\\* ! -name \\*.gz -exec gzip {} \\; >/dev/null 2>&1 )"
+    cron_file: "rundeck"
+    user: root
+    name: "Compress rundeck logs"
+    minute: "00"
+    hour: "01"
+    state: "present"
+
+- name: Delete old logs
+  cron:
+    job: "( find /var/log/rundeck/ -name \\*.log.\\* -name \\*.gz -mtime +3 -exec rm {} \\; >/dev/null 2>&1 )"
+    cron_file: "rundeck"
+    user: root
+    name: "Delete old rundeck logs"
+    minute: "30"
+    hour: "01"
+    state: "present"
