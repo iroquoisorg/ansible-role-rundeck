@@ -1,7 +1,32 @@
 ---
 - hosts: localhost
   remote_user: root
+  vars:
+    rundeck_mail_host: "smtp.example.com"
+    rundeck_mail_port: 465
+    rundeck_mail_user: "username"
+    rundeck_mail_password: "secret"
+    rundeck_admin: { username: "admin", password: "098f6bcd4621d373cade4e832627b4f6" }
+    rundeck_users:
+      - { username: "user", password: "ad0234829205b9033196ba818f7a872b" }
+
+    rundeck_mysql_user: rundeck
+    rundeck_mysql_password: dbpass
+    rundeck_mysql_db: rundeck
+    rundeck_storage_key: 5ebe2294ecd0e0f08eab7690d2a6ee69
+    rundeck_api_key: e54cfb3714f76cedd4b27889e1f6a174
+
+    rundeck_token: ee41750a2cd87a6fddd89d8760a5345e
+
+    mysql_root_db_pass: dbrootpass
+    mysql_databases: [ 'rundeck' ]
+    mysql_users:
+      - name: "rundeck"
+        password: "dbpass"
+        database: "rundeck"
+
   roles:
+    - mysql
     - java8
     - apache
     - ansible-role-rundeck

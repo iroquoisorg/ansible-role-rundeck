@@ -8,3 +8,8 @@
   name: apache
   version: master
   scm: git
+
+- src: https://github.com/iroquoisorg/ansible-role-mysql.git
+  name: mysql
+  version: master
+  scm: git
