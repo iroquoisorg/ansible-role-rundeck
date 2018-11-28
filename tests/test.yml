@@ -26,7 +26,7 @@
         database: "rundeck"
 
   roles:
-    - mysql
-    - java8
-    - apache
+    - iroquoisorg.mysql
+    - iroquoisorg.java8
+    - iroquoisorg.apache
     - ansible-role-rundeck
