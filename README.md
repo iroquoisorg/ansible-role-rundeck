@@ -27,3 +27,7 @@ rundeck_api_key: ""
 rundeck_expire_projects: "[]" # string with python array
 
 ```
+
+# Development
+
+Please check [development guide](DEVELOPMENT.md) for details about developing and testing this role.

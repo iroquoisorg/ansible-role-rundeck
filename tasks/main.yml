@@ -5,21 +5,21 @@
     state: present
 
 - name: Add Rundeck repository
-  become: yes
+  become: true
   apt_repository:
     repo: 'deb http://dl.bintray.com/rundeck/rundeck-deb /'
     state: present
-    update_cache: yes
+    update_cache: true
   tags:
     - rundeck
 
 - name: Install Rundeck packages
-  become: yes
+  become: true
   apt:
     name: "rundeck={{ rundeck_version }}"
     state: present
-    force: yes
-    update_cache: yes
+    force: true
+    update_cache: true
     cache_valid_time: "{{ apt_cache_valid_time | default(3600) }}"
   notify: restart rundeck
   tags:
